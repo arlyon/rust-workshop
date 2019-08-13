@@ -54,22 +54,8 @@ use std::fs;
 use std::fmt;
 use std::error;
 
-#[derive(Debug)]
-struct ArgError {
-    pub msg: String,
-}
-
-impl error::Error for ArgError {}
-
-impl fmt::Display for ArgError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.msg)
-    }
-}
-
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let file_name = env::args().nth(1)
-        .ok_or(ArgError { msg: "No file name provided!".to_string() })?;
+    let file_name = env::args().nth(1).ok_or("No file name provided!")?;
 
     let file_content = fs::read_to_string(&file_name)?;
 
@@ -85,11 +71,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     if errors.peek().is_none() {
         Ok(println!("{}", numbers.sum::<i32>()))
     } else {
-        Err(Box::new(ArgError{
-            msg: format!("Errors found during parse: {}", errors
-                .map(|(i, e)| format!("on line {} ({:})", i, e.to_string()))
-                .collect::<Vec<String>>()
-                .join(", "))
-        }))
+        Err(format!("Errors found during parse: {}", errors
+            .map(|(i, e)| format!("on line {} ({:})", i, e.to_string()))
+            .collect::<Vec<_>>()
+            .join(", ")
+        ).into())
     }
 }

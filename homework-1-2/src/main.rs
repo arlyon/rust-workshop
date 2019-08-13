@@ -61,22 +61,8 @@ use std::fs;
 use std::error;
 use std::fmt;
 
-#[derive(Debug)]
-struct ArgError {
-    pub msg: String,
-}
-
-impl error::Error for ArgError {}
-
-impl fmt::Display for ArgError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.msg)
-    }
-}
-
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let file_name = env::args().nth(1)
-        .ok_or(ArgError { msg: "No file name provided!".to_string() })?;
+    let file_name = env::args().nth(1).ok_or("No file name provided!")?;
 
     let content = fs::read_to_string(&file_name)?;
 
