@@ -51,16 +51,14 @@ Result has a sum method, but it only return the first error...
 
 use std::env;
 use std::fs;
-use std::fmt;
-use std::error;
 
-fn main() -> Result<(), Box<dyn error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file_name = env::args().nth(1).ok_or("No file name provided!")?;
 
     let file_content = fs::read_to_string(&file_name)?;
 
     // Ok(line number, Result) and Err(line_number, Result)
-    let (oks, errors): (Vec<_>, Vec<_>) = file_content.split('\n')
+    let (oks, errors): (Vec<_>, Vec<_>) = file_content.lines()
         .map(str::parse::<i32>)
         .enumerate()
         .partition(|(_, f)| f.is_ok());

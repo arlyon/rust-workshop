@@ -59,7 +59,6 @@ Note: When I test your homework, I'll use different input, so no cheating.
 use std::env;
 use std::fs;
 use std::error;
-use std::fmt;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let file_name = env::args().nth(1).ok_or("No file name provided!")?;
@@ -67,7 +66,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let content = fs::read_to_string(&file_name)?;
 
     let filtered_content = content.chars()
-        .filter(|c1| "<>+-.,[]".chars().any(|c2| c2.eq(c1)))
+        .filter(|c1| "<>+-.,[]".contains(|c2: char| c2.eq(c1)))
         .collect::<String>();
 
     Ok(println!("{}", filtered_content))
