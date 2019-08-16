@@ -57,15 +57,16 @@ Note: When I test your homework, I'll use different input, so no cheating.
 */
 
 use std::env;
-use std::fs;
 use std::error;
+use std::fs;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let file_name = env::args().nth(1).ok_or("No file name provided!")?;
 
     let content = fs::read_to_string(&file_name)?;
 
-    let filtered_content = content.chars()
+    let filtered_content = content
+        .chars()
         .filter(|c1| "<>+-.,[]".contains(|c2: char| c2.eq(c1)))
         .collect::<String>();
 

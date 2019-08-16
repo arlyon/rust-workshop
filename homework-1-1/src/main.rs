@@ -58,21 +58,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file_content = fs::read_to_string(&file_name)?;
 
     // Ok(line number, Result) and Err(line_number, Result)
-    let (oks, errors): (Vec<_>, Vec<_>) = file_content.lines()
+    let (oks, errors): (Vec<_>, Vec<_>) = file_content
+        .lines()
         .map(str::parse::<i32>)
         .enumerate()
         .partition(|(_, f)| f.is_ok());
 
     let numbers = oks.iter().map(|(_, f)| f.as_ref().unwrap());
-    let mut errors = errors.iter().map(|(i, f)| (i+1, f.as_ref().unwrap_err())).peekable();
+    let mut errors = errors
+        .iter()
+        .map(|(i, f)| (i + 1, f.as_ref().unwrap_err()))
+        .peekable();
 
     if errors.peek().is_none() {
         Ok(println!("{}", numbers.sum::<i32>()))
     } else {
-        Err(format!("Errors found during parse: {}", errors
-            .map(|(i, e)| format!("on line {} ({:})", i, e.to_string()))
-            .collect::<Vec<_>>()
-            .join(", ")
-        ).into())
+        Err(format!(
+            "Errors found during parse: {}",
+            errors
+                .map(|(i, e)| format!("on line {} ({:})", i, e.to_string()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+        .into())
     }
 }
