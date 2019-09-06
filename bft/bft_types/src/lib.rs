@@ -1,16 +1,30 @@
-use std::io::{Result, Error, ErrorKind};
+//! Contains supporting types and datastructures
+//! for the brainfuck interpreter.
+
+use std::io::{Result, Error, ErrorKind, BufReader, BufRead};
 use std::path::Path;
 use std::fs;
 use std::fmt;
 use std::string::ToString;
 
+/// A brainfuck program, ie. a list of valid brainfuck instructions.
 pub struct BrainfuckProgram {
-    name: String,
+    pub name: String,
     tokens: Vec<Token>
 }
 
 impl BrainfuckProgram {
-    pub fn new(file_name: &dyn AsRef<str>, content: &dyn AsRef<str>) -> BrainfuckProgram {
+
+    /// Creates a new [BrainfuckProgram] with the given file name and content.
+    pub fn new(file_name: &dyn AsRef<str>, tokens: Vec<Token>) -> BrainfuckProgram {
+        BrainfuckProgram {
+            name: file_name.as_ref().to_string(),
+            tokens,
+        }
+    }
+
+    /// Creates a new [BrainfuckProgram] with the given file name and content.
+    pub fn from_string(file_name: &dyn AsRef<str>, content: &dyn AsRef<str>) -> BrainfuckProgram {
         BrainfuckProgram {
             name: file_name.as_ref().to_string(),
             tokens: content.as_ref().chars()
@@ -19,19 +33,31 @@ impl BrainfuckProgram {
         }
     }
 
+    /// Parses a new [BrainfuckProgram] at a given path relative to the current directory.
     pub fn from_file(path: &dyn AsRef<Path>) -> Result<BrainfuckProgram> {
-        Ok(Self::new(
-            &path.as_ref().file_name()
+
+        let name = path.as_ref().file_name()
                 .ok_or_else(|| Error::new(
                     ErrorKind::Other, 
                     format!("Couldn't discern file name from \"{}\"", path.as_ref().display())
                 ))?
-                .to_string_lossy().to_string(),
-            &fs::read_to_string(&path)?
+                .to_string_lossy().to_string();
+
+        let text = BufReader::new(fs::File::open(path)?);
+        let tokens: Result<_> = text.lines()
+            .enumerate()
+            .map(|(row, line)| Ok(
+                line?.chars().filter_map(|c| Token::new(1,1,c))
+            ))
+            .collect();
+
+        Ok(Self::new(
+            &name,
+            tokens?,
         ))
     }
 
-    pub fn get_instructions(&self) -> &[Token] {
+    pub fn get_tokens(&self) -> &[Token] {
         self.tokens.as_slice()
     }
 }
@@ -53,15 +79,33 @@ static INSTRUCTIONS: &[(char, RawInstruction)] = &[
     (']', RawInstruction::EndLoop)
 ];
 
+/// Enumerates all the instructions in valid brainfuck code.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum RawInstruction {
+    /// Increments the currently-pointed-at index by one.
     IncrementPointer,
+
+    /// Decrements the currently-pointed-at index by one.
     DecrementPointer,
+
+    /// Increments the byte at the currently-pointed-at index by one.
     Increment,
+
+    /// Decrements the byte at the currently-pointed-at index by one.
     Decrement,
+
+    /// Prints the byte at the currently-pointed-at index.
     Output,
+
+    /// Reads a byte from stdin into the currently-pointed-at index.
     Input,
+
+    /// If the byte at the currently-pointed-at index is 0, jump the instruction 
+    /// pointer to the instruction after the next [RawInstruction::EndLoop].
     StartLoop,
+
+    /// If the byte at the currently-pointed-at index is 0, jump the instruction 
+    /// pointer to the instruction after the previous [RawInstruction::StartLoop].
     EndLoop,
 }
 
@@ -81,15 +125,19 @@ impl std::fmt::Display for RawInstruction {
     }
 }
 
+/// Represents a token in a brainfuck program, which consists of
+/// a line number, column number, and [RawInstruction].
 #[derive(Debug, PartialEq)]
 pub struct Token {
     line_number: u32,
     col_number: u32,
-    instruction: RawInstruction,
+    pub instruction: RawInstruction,
 }
 
 impl Token {
-    fn new(line_number: usize, col_number: usize, c: char) -> Option<Self> {
+    /// Attempts to create a new [Token], returning [Some] if the 
+    /// [char] is a valid [RawInstruction] and [None] otherwise.
+    pub fn new(line_number: usize, col_number: usize, c: char) -> Option<Self> {
         Some(Self {
             line_number: line_number as u32,
             col_number: col_number as u32,

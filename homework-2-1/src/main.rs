@@ -121,8 +121,8 @@ use std::fs;
 
 #[derive(Debug)]
 enum TestScore {
-    Attended(String, u32),
-    Skipped(String),
+   Attended(String, u32),
+   Skipped(String),
 }
 
 impl TestScore {
@@ -179,25 +179,22 @@ impl CumulativeScore {
 
 impl fmt::Display for CumulativeScore {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), std::fmt::Error> {
-        write!(f, "Took {} test", self.total_attended)?;
-        if self.total_attended != 1 {
-            write!(f, "s")?
-        };
+        let tests = |n| if n == 1 { "test" } else { "tests" };
         write!(
             f,
-            ", with a total score of {}. Missed {} test",
-            self.total_points, self.total_skipped
-        )?;
-        if self.total_skipped != 1 {
-            write!(f, "s")?
-        };
-        write!(f, ".")
+            "Took {} {}, with a total score of {}. Missed {} {}.",
+            self.total_attended,
+            tests(self.total_attended),
+            self.total_points,
+            self.total_skipped,
+            tests(self.total_skipped)
+        )
     }
 }
 
 fn parse_scores_from_file(file_name: &str) -> Result<Vec<TestScore>, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(&file_name)?;
-    content.lines().map(TestScore::try_from).collect() /* very cool FromIter: Vec<Result> -> Result<Vec> !!! */
+    content.lines().map(TryFrom::try_from).collect() /* very cool FromIter: Vec<Result> -> Result<Vec> !!! */
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
